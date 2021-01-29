@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo "ddtrace PHP extension"
+exit 0

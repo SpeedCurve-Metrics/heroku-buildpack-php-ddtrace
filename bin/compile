@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+# fail hard
+set -o pipefail
+# fail harder
+set -eu
+# move hidden files too, just in case
+shopt -s dotglob
+
+env_dir=${3:-}
+
+indent() {
+    sed -u 's/^/       /'
+}
+
+export_env_dir() {
+	local env_dir=$1
+	local whitelist_regex=${2:-''}
+	local blacklist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH|IFS)$'}
+	if [ -d "$env_dir" ]; then
+		for e in $(ls $env_dir); do
+			echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
+			export "$e=$(cat $env_dir/$e)"
+			:
+		done
+	fi
+}
+
+echo "-----> Enabling ddtrace PHP extension"
+
+export_env_dir "$env_dir" '^DDTRACE_EXT_VERSION$'
+if [[ -n ${DDTRACE_EXT_VERSION:-} ]]; then
+	echo "Using version '$DDTRACE_EXT_VERSION' (from "'$DDTRACE_EXT_VERSION env var).' | indent
+else
+	export DDTRACE_EXT_VERSION="20180731"
+	echo "Using version '$DDTRACE_EXT_VERSION' (default value)." | indent
+fi
+
+touch /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
+echo "[PHP]" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
+echo "extension=/app/.apt/opt/datadog-php/extensions/ddtrace-$DDTRACE_EXT_VERSION.so" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
+echo "ddtrace.request_init_hook=/app/.apt/opt/datadog-php/dd-trace-sources/bridge/dd_wrap_autoloader.php" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
+
+echo "Done" | indent
+
+
