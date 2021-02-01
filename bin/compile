@@ -8,33 +8,74 @@ set -eu
 # move hidden files too, just in case
 shopt -s dotglob
 
-env_dir=${3:-}
+function error() {
+    echo " !     $*" >&2
+    exit 1
+}
 
-indent() {
-    sed -u 's/^/       /'
+function topic() {
+    echo "-----> $*"
+}
+
+function indent() {
+    c='s/^/       /'
+    case $(uname) in
+        Darwin) sed -l "$c";;
+        *)      sed -u "$c";;
+    esac
 }
 
 export_env_dir() {
-	local env_dir=$1
-	local whitelist_regex=${2:-''}
-	local blacklist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH|IFS)$'}
-	if [ -d "$env_dir" ]; then
-		for e in $(ls $env_dir); do
-			echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
-			export "$e=$(cat $env_dir/$e)"
-			:
-		done
-	fi
+    env_dir=$1
+    acceptlist_regex=${2:-''}
+    denylist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH)$'}
+    if [ -d "$env_dir" ]; then
+        for e in $(ls $env_dir); do
+            echo "$e" | grep -E "$acceptlist_regex" | grep -qvE "$denylist_regex" &&
+            export "$e=$(cat $env_dir/$e)"
+            :
+        done
+    fi
 }
 
-echo "-----> Enabling ddtrace PHP extension"
+env_dir=${3:-}
+export_env_dir "$env_dir" '^DDTRACE_EXT_'
 
-export_env_dir "$env_dir" '^DDTRACE_EXT_VERSION$'
-if [[ -n ${DDTRACE_EXT_VERSION:-} ]]; then
-	echo "Using version '$DDTRACE_EXT_VERSION' (from "'$DDTRACE_EXT_VERSION env var).' | indent
+topic "Preparing to install ddtrace PHP extension"
+
+if [[ -n ${DDTRACE_EXT_PKG_URL:-} ]]; then
+    echo "Using package URL '$DDTRACE_EXT_PKG_URL' (from "'$DDTRACE_EXT_PKG_URL env var).' | indent
 else
-	export DDTRACE_EXT_VERSION="20180731"
-	echo "Using version '$DDTRACE_EXT_VERSION' (default value)." | indent
+    if [[ -n ${DDTRACE_EXT_RELEASE:-} ]]; then
+        echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (from "'$DDTRACE_EXT_RELEASE env var).' | indent
+    else
+        export DDTRACE_EXT_RELEASE="0.54.0"
+        echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (default value)." | indent
+    fi
+    export DDTRACE_EXT_PKG_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DDTRACE_EXT_RELEASE"/datadog-php-tracer_"$DDTRACE_EXT_RELEASE"_amd64.deb"
+fi
+
+APT_DIR="$BUILD_DIR/.apt"
+APT_CACHE_DIR="$CACHE_DIR/apt/cache"
+PACKAGE_NAME="dd-php-tracer"
+PACKAGE_FILE=$APT_CACHE_DIR/archives/$PACKAGE_NAME.deb
+
+mkdir -p $APT_CACHE_DIR/archives/partial
+mkdir -p $BUILD_DIR/.apt
+
+topic "Downloading package from $DDTRACE_EXT_PKG_URL"
+curl --silent --show-error --fail --location --output $PACKAGE_FILE $DDTRACE_EXT_PKG_URL 2>&1 | indent
+
+topic "Installing ddtrace PHP extension"
+dpkg -x $PACKAGE_FILE $BUILD_DIR/.apt/
+
+topic "Enabling ddtrace PHP extension"
+
+if [[ -n ${DDTRACE_EXT_VERSION:-} ]]; then
+    echo "Using version '$DDTRACE_EXT_VERSION' (from "'$DDTRACE_EXT_VERSION env var).' | indent
+else
+    export DDTRACE_EXT_VERSION="20180731"
+    echo "Using version '$DDTRACE_EXT_VERSION' (default value)." | indent
 fi
 
 touch /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini

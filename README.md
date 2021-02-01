@@ -16,6 +16,14 @@ heroku buildpacks:add --app <your-app-name> https://github.com/SpeedCurve-Metric
 
 ## Configuration
 
+This buildpack accepts several config vars:
+
+- `DDTRACE_EXT_VERSION` - The extension version that PHP is compiled with. Defaults to `20180731`.
+- `DDTRACE_EXT_RELEASE` - The release name of [dd-trace-php](https://github.com/DataDog/dd-trace-php/releases/) to download. Defaults to `0.54.0`.
+- `DDTRACE_EXT_PKG_URL` - The URL to a dd-trace-php `.deb` file. This option overides `DDTRACE_EXT_RELEASE`.
+
+### More information: `DDTRACE_EXT_VERSION`
+
 PHP on Heroku is compiled with a specific version of the ddtrace extension. By default, this buildpack enables version `20180731` of the extension. If PHP was compiled with a different version, you will see warnings like this in your application logs:
 
 ```
