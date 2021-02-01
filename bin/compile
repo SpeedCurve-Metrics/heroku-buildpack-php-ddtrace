@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # bin/compile <build-dir> <cache-dir> <env-dir>
 
-# fail hard
-set -o pipefail
-# fail harder
-set -eu
-# move hidden files too, just in case
-shopt -s dotglob
+set -eo pipefail
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=${3:-}
 
 function error() {
     echo " !     $*" >&2
@@ -38,8 +37,7 @@ export_env_dir() {
     fi
 }
 
-env_dir=${3:-}
-export_env_dir "$env_dir" '^DDTRACE_EXT_'
+export_env_dir "$ENV_DIR" '^DDTRACE_EXT_'
 
 topic "Preparing to install ddtrace PHP extension"
 
