@@ -24,7 +24,7 @@ This buildpack accepts several config vars:
 
 ### More information: `DDTRACE_EXT_VERSION`
 
-PHP on Heroku is compiled with a specific version of the ddtrace extension. By default, this buildpack enables version `20180731` of the extension. If PHP was compiled with a different version, you will see warnings like this in your application logs:
+PHP on Heroku is compiled with a specific version of the ddtrace extension. By default, this buildpack enables version `20190902` of the extension. If PHP was compiled with a different version, you will see warnings like this in your application logs:
 
 ```
 PHP Warning:  PHP Startup: ddtrace: Unable to initialize module
