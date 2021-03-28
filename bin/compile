@@ -72,7 +72,7 @@ topic "Enabling ddtrace PHP extension"
 if [[ -n ${DDTRACE_EXT_VERSION:-} ]]; then
     echo "Using version '$DDTRACE_EXT_VERSION' (from "'$DDTRACE_EXT_VERSION env var).' | indent
 else
-    export DDTRACE_EXT_VERSION="20180731"
+    export DDTRACE_EXT_VERSION="20190902"
     echo "Using version '$DDTRACE_EXT_VERSION' (default value)." | indent
 fi
 
