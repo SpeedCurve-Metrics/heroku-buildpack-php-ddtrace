@@ -47,7 +47,7 @@ else
     if [[ -n ${DDTRACE_EXT_RELEASE:-} ]]; then
         echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (from "'$DDTRACE_EXT_RELEASE env var).' | indent
     else
-        export DDTRACE_EXT_RELEASE="0.54.0"
+        export DDTRACE_EXT_RELEASE="0.82.0"
         echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (default value)." | indent
     fi
     export DDTRACE_EXT_PKG_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DDTRACE_EXT_RELEASE"/datadog-php-tracer_"$DDTRACE_EXT_RELEASE"_amd64.deb"
@@ -69,18 +69,16 @@ dpkg -x $PACKAGE_FILE $BUILD_DIR/.apt/
 
 topic "Enabling ddtrace PHP extension"
 
-if [[ -n ${DDTRACE_EXT_VERSION:-} ]]; then
-    echo "Using version '$DDTRACE_EXT_VERSION' (from "'$DDTRACE_EXT_VERSION env var).' | indent
+if [[ -n ${DDTRACE_EXT_PHP_API:-} ]]; then
+    echo "Using version '$DDTRACE_EXT_PHP_API' (from "'$DDTRACE_EXT_PHP_API env var).' | indent
 else
-    export DDTRACE_EXT_VERSION="20190902"
-    echo "Using version '$DDTRACE_EXT_VERSION' (default value)." | indent
+    export DDTRACE_EXT_PHP_API="20210902"
+    echo "Using version '$DDTRACE_EXT_PHP_API' (default value)." | indent
 fi
 
 touch /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
 echo "[PHP]" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-echo "extension=/app/.apt/opt/datadog-php/extensions/ddtrace-$DDTRACE_EXT_VERSION.so" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
+echo "extension=/app/.apt/opt/datadog-php/extensions/ddtrace-$DDTRACE_EXT_PHP_API.so" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
 echo "ddtrace.request_init_hook=/app/.apt/opt/datadog-php/dd-trace-sources/bridge/dd_wrap_autoloader.php" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
 
 echo "Done" | indent
-
-
