@@ -33,8 +33,8 @@ PHP    compiled with module API=20220829
 These options need to match
 ```
 
-You can change the version by setting the `DDTRACE_EXT_VERSION` config var in Heroku. For example:
+You can change the version by setting the `DDTRACE_EXT_RELEASE` config var in Heroku. For example:
 
 ```
-heroku config:set --app <your-app-name> DDTRACE_EXT_VERSION=20220829
+heroku config:set --app <your-app-name> DDTRACE_EXT_RELEASE=20220829
 ```
