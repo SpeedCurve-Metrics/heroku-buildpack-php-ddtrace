@@ -93,6 +93,11 @@ touch $INI_FILE
 echo "[PHP]" >> $INI_FILE
 echo "extension=/app/.apt/opt/dd-library-php/trace/ext/$DDTRACE_EXT_PHP_API/ddtrace.so" >> $INI_FILE
 echo "ddtrace.request_init_hook=/app/.apt/opt/dd-library-php/trace/bridge/dd_wrap_autoloader.php" >> $INI_FILE
-echo "extension=/app/.apt/opt/dd-library-php/profiling/ext/$DDTRACE_EXT_PHP_API/datadog-profiling.so" >> $INI_FILE
+
+if [[ -n ${DD_PROFILING_ENABLED:-} ]];
+then
+    echo "Enabling the profiler" | indent
+    echo "extension=/app/.apt/opt/dd-library-php/profiling/ext/$DDTRACE_EXT_PHP_API/datadog-profiling.so" >> $INI_FILE
+fi
 
 echo "Done" | indent
