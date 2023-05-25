@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-echo "ddtrace PHP extension"
+echo "Datadog PHP extensions"
 exit 0

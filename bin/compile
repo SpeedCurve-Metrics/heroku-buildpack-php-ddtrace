@@ -39,7 +39,7 @@ export_env_dir() {
 
 export_env_dir "$ENV_DIR" '^DDTRACE_EXT_'
 
-topic "Preparing to install ddtrace PHP extension"
+topic "Preparing to install Datadog PHP extensions"
 
 if [[ -n ${DDTRACE_EXT_PKG_URL:-} ]]; then
     echo "Using package URL '$DDTRACE_EXT_PKG_URL' (from "'$DDTRACE_EXT_PKG_URL env var).' | indent
@@ -47,27 +47,37 @@ else
     if [[ -n ${DDTRACE_EXT_RELEASE:-} ]]; then
         echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (from "'$DDTRACE_EXT_RELEASE env var).' | indent
     else
-        export DDTRACE_EXT_RELEASE="0.82.0"
+        export DDTRACE_EXT_RELEASE="0.87.2"
         echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (default value)." | indent
     fi
-    export DDTRACE_EXT_PKG_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DDTRACE_EXT_RELEASE"/datadog-php-tracer_"$DDTRACE_EXT_RELEASE"_amd64.deb"
+    export DDTRACE_EXT_PKG_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DDTRACE_EXT_RELEASE"/dd-library-php-"$DDTRACE_EXT_RELEASE"-x86_64-linux-gnu.tar.gz"
 fi
 
-APT_DIR="$BUILD_DIR/.apt"
-APT_CACHE_DIR="$CACHE_DIR/apt/cache"
-PACKAGE_NAME="dd-php-tracer"
-PACKAGE_FILE=$APT_CACHE_DIR/archives/$PACKAGE_NAME.deb
+if [[ "$DDTRACE_EXT_PKG_URL" != *tar.gz ]]
+then
+    echo "Deprecated package URL. Please note that it is encourage to use the 'dd-library-php-*-x86_64-linux-gnu.tar.gz' distribution" | indent
+    exit 1
+fi
 
-mkdir -p $APT_CACHE_DIR/archives/partial
-mkdir -p $BUILD_DIR/.apt
+mkdir -p $CACHE_DIR
+
+PACKAGE_NAME="dd-library-php-"$DDTRACE_EXT_RELEASE
+PACKAGE_FILE=$CACHE_DIR/$PACKAGE_NAME.tar.gz
 
 topic "Downloading package from $DDTRACE_EXT_PKG_URL"
-curl --silent --show-error --fail --location --output $PACKAGE_FILE $DDTRACE_EXT_PKG_URL 2>&1 | indent
+if [[ -f ${PACKAGE_FILE} ]];
+then
+    echo "Found cached file at "$PACKAGE_FILE | indent
+else
+    curl --silent --show-error --fail --location --output $PACKAGE_FILE $DDTRACE_EXT_PKG_URL 2>&1 | indent
+fi
 
-topic "Installing ddtrace PHP extension"
-dpkg -x $PACKAGE_FILE $BUILD_DIR/.apt/
+mkdir -p $BUILD_DIR/.apt/opt
 
-topic "Enabling ddtrace PHP extension"
+topic "Installing Datadog PHP extensions"
+tar -zxvf $PACKAGE_FILE --directory=$BUILD_DIR/.apt/opt 2>&1 | indent
+
+topic "Enabling Datadog PHP extensions"
 
 if [[ -n ${DDTRACE_EXT_PHP_API:-} ]]; then
     echo "Using version '$DDTRACE_EXT_PHP_API' (from "'$DDTRACE_EXT_PHP_API env var).' | indent
@@ -76,9 +86,13 @@ else
     echo "Using version '$DDTRACE_EXT_PHP_API' (default value)." | indent
 fi
 
-touch /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-echo "[PHP]" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-echo "extension=/app/.apt/opt/datadog-php/extensions/ddtrace-$DDTRACE_EXT_PHP_API.so" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-echo "ddtrace.request_init_hook=/app/.apt/opt/datadog-php/dd-trace-sources/bridge/dd_wrap_autoloader.php" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
+INI_FILE=/app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
+INI_FILE=datadog-php-custom.ini
+
+touch $INI_FILE
+echo "[PHP]" >> $INI_FILE
+echo "extension=/app/.apt/opt/dd-library-php/trace/ext/$DDTRACE_EXT_PHP_API/ddtrace.so" >> $INI_FILE
+echo "ddtrace.request_init_hook=/app/.apt/opt/dd-library-php/trace/bridge/dd_wrap_autoloader.php" >> $INI_FILE
+echo "extension=/app/.apt/opt/dd-library-php/profiling/ext/$DDTRACE_EXT_PHP_API/datadog-profiling.so" >> $INI_FILE
 
 echo "Done" | indent
