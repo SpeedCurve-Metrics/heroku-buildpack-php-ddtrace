@@ -87,7 +87,6 @@ else
 fi
 
 INI_FILE=/app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-INI_FILE=datadog-php-custom.ini
 
 touch $INI_FILE
 echo "[PHP]" >> $INI_FILE
