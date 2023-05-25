@@ -55,7 +55,7 @@ fi
 
 if [[ "$DDTRACE_EXT_PKG_URL" != *tar.gz ]]
 then
-    echo "Deprecated package URL. Please note that it is encourage to use the 'dd-library-php-*-x86_64-linux-gnu.tar.gz' distribution" | indent
+    echo "The package URL is out of date. Please note to use the 'dd-library-php-*-x86_64-linux-gnu.tar.gz' files from the releases at https://github.com/DataDog/dd-trace-php/releases" | indent
     exit 1
 fi
 
