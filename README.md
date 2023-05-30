@@ -18,24 +18,7 @@ heroku buildpacks:add --app <your-app-name> https://github.com/SpeedCurve-Metric
 
 This buildpack accepts several config vars. All of them are optional:
 
-- `DDTRACE_EXT_PHP_API` - The PHP API version that your application uses. Defaults to `20210902`. Use `phpinfo()` to find the API version if you're not sure.
-- `DDTRACE_EXT_RELEASE` - The release name of [dd-trace-php](https://github.com/DataDog/dd-trace-php/releases/) to download. Defaults to `0.82.0`.
-- `DDTRACE_EXT_PKG_URL` - The URL to a dd-trace-php `.tar.gz` file. This option overides `DDTRACE_EXT_RELEASE`.
-- `DD_PROFILING_ENABLED` - This will enable the profiling extension.
-
-### More information: `DDTRACE_EXT_PHP_API`
-
-This buildpack does not determine that PHP API version automatically. The default value should work for most PHP versions, but if the version is wrong then you will see warnings like this in your application logs:
-
-```
-PHP Warning:  PHP Startup: ddtrace: Unable to initialize module
-Module compiled with module API=20210902
-PHP    compiled with module API=20220829
-These options need to match
-```
-
-You can change the version by setting the `DDTRACE_EXT_VERSION` config var in Heroku. For example:
-
-```
-heroku config:set --app <your-app-name> DDTRACE_EXT_VERSION=20220829
-```
+- `DD_RELEASE` - The release name of [dd-trace-php](https://github.com/DataDog/dd-trace-php/releases/) to download. Defaults to `0.87.2`.
+- `DD_INSTALLER_URL` - The URL to the `datadog-setup.php` to be used (to be found on the [dd-trace-php release page](https://github.com/DataDog/dd-trace-php/releases/)).
+- `DD_PROFILING_ENABLED` - Set to a non empty value, this will install and enable the profiling extension.
+- `DD_APPSEC_ENABLED` - Set to a non empty value, this will install and enable the appsec extension.

@@ -37,70 +37,51 @@ export_env_dir() {
     fi
 }
 
-export_env_dir "$ENV_DIR" '^DDTRACE_EXT|DD_'
+export_env_dir "$ENV_DIR" '^DD_'
 
 topic "Preparing to install Datadog PHP extensions"
 
-if [[ -n ${DDTRACE_EXT_PKG_URL:-} ]]; then
-    echo "Using package URL '$DDTRACE_EXT_PKG_URL' (from "'$DDTRACE_EXT_PKG_URL env var).' | indent
+if [[ -n ${DD_INSTALLER_URL:-} ]]; then
+    echo "Using package URL '$DD_INSTALLER_URL' (from "'$DD_INSTALLER_URL env var).' | indent
 else
-    if [[ -n ${DDTRACE_EXT_RELEASE:-} ]]; then
-        echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (from "'$DDTRACE_EXT_RELEASE env var).' | indent
+    if [[ -n ${DD_RELEASE:-} ]]; then
+        echo "Using dd-trace-php release '$DD_RELEASE' (from "'$DD_RELEASE env var).' | indent
     else
-        export DDTRACE_EXT_RELEASE="0.87.2"
-        echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (default value)." | indent
+        export DD_RELEASE="0.87.2"
+        echo "Using dd-trace-php release '$DD_RELEASE' (default value)." | indent
     fi
-    export DDTRACE_EXT_PKG_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DDTRACE_EXT_RELEASE"/dd-library-php-"$DDTRACE_EXT_RELEASE"-x86_64-linux-gnu.tar.gz"
+    export DD_INSTALLER_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DD_RELEASE"/datadog-setup.php"
 fi
 
-if [[ "$DDTRACE_EXT_PKG_URL" != *tar.gz ]]
+if [[ "$DD_INSTALLER_URL" != *datadog-setup.php ]]
 then
-    echo "The package URL is out of date. Please note to use the 'dd-library-php-*-x86_64-linux-gnu.tar.gz' files from the releases at https://github.com/DataDog/dd-trace-php/releases" | indent
+    echo "The package URL is out of date. Please note to use the 'datadog-setup.php' file URL from the releases at https://github.com/DataDog/dd-trace-php/releases" | indent
     exit 1
 fi
 
-mkdir -p $CACHE_DIR
+topic "Downloading installer from $DD_INSTALLER_URL"
+curl --silent --show-error --fail --location --output datadog-setup.php $DD_INSTALLER_URL 2>&1 | indent
 
-PACKAGE_NAME="dd-library-php-"$DDTRACE_EXT_RELEASE
-PACKAGE_FILE=$CACHE_DIR/$PACKAGE_NAME.tar.gz
+mkdir -p $BUILD_DIR/opt
 
-topic "Downloading package from $DDTRACE_EXT_PKG_URL"
-if [[ -f ${PACKAGE_FILE} ]];
-then
-    echo "Found cached file at "$PACKAGE_FILE | indent
-    if ! gzip -t ${PACKAGE_FILE} 2>&1 | indent ; then
-        echo "cache is invalid, downloading ..." | indent
-        curl --silent --show-error --fail --location --output $PACKAGE_FILE $DDTRACE_EXT_PKG_URL 2>&1 | indent
-    fi
-else
-    curl --silent --show-error --fail --location --output $PACKAGE_FILE $DDTRACE_EXT_PKG_URL 2>&1 | indent
-fi
+topic "Running Datadog installer"
 
-mkdir -p $BUILD_DIR/.apt/opt
-
-topic "Installing Datadog PHP extensions"
-tar -zxvf $PACKAGE_FILE --directory=$BUILD_DIR/.apt/opt 2>&1 | indent
-
-topic "Enabling Datadog PHP extensions"
-
-if [[ -n ${DDTRACE_EXT_PHP_API:-} ]]; then
-    echo "Using version '$DDTRACE_EXT_PHP_API' (from "'$DDTRACE_EXT_PHP_API env var).' | indent
-else
-    export DDTRACE_EXT_PHP_API="20210902"
-    echo "Using version '$DDTRACE_EXT_PHP_API' (default value)." | indent
-fi
-
-INI_FILE=/app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-
-touch $INI_FILE
-echo "[PHP]" >> $INI_FILE
-echo "extension=/app/.apt/opt/dd-library-php/trace/ext/$DDTRACE_EXT_PHP_API/ddtrace.so" >> $INI_FILE
-echo "ddtrace.request_init_hook=/app/.apt/opt/dd-library-php/trace/bridge/dd_wrap_autoloader.php" >> $INI_FILE
+OPTS=""
 
 if [[ -n ${DD_PROFILING_ENABLED:-} ]];
 then
-    echo "Enabling the profiler" | indent
-    echo "extension=/app/.apt/opt/dd-library-php/profiling/ext/$DDTRACE_EXT_PHP_API/datadog-profiling.so" >> $INI_FILE
+    OPTS+=" --enable-profiling"
 fi
+
+if [[ -n ${DD_APPSEC_ENABLED:-} ]];
+then
+    OPTS+=" --enable-appsec"
+fi
+
+env -u PHP_INI_SCAN_DIR php datadog-setup.php --php-bin=all --install-dir=$BUILD_DIR/opt $OPTS 2>&1 | indent
+
+topic "Validating installation"
+
+env -u PHP_INI_SCAN_DIR php -v 2>&1 | indent
 
 echo "Done" | indent
