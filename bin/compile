@@ -55,14 +55,11 @@ fi
 
 if [[ "$DD_INSTALLER_URL" != *datadog-setup.php ]]
 then
-    echo "The package URL is out of date. Please note to use the 'datadog-setup.php' file URL from the releases at https://github.com/DataDog/dd-trace-php/releases" | indent
-    exit 1
+    error "The package URL is out of date. Please use the 'datadog-setup.php' file URL from the releases at https://github.com/DataDog/dd-trace-php/releases"
 fi
 
 topic "Downloading installer from $DD_INSTALLER_URL"
 curl --silent --show-error --fail --location --output datadog-setup.php $DD_INSTALLER_URL 2>&1 | indent
-
-mkdir -p $BUILD_DIR/opt
 
 topic "Running Datadog installer"
 
@@ -79,6 +76,8 @@ then
     OPTS+=" --enable-appsec"
     echo "Appsec will be enabled" | indent
 fi
+
+mkdir -p $BUILD_DIR/opt
 
 env -u PHP_INI_SCAN_DIR php datadog-setup.php --php-bin=all --install-dir=$BUILD_DIR/opt $OPTS 2>&1 | indent
 
