@@ -41,6 +41,20 @@ export_env_dir "$ENV_DIR" '^DD_'
 
 topic "Preparing to install Datadog PHP extensions"
 
+# Warn folks about 
+if [[ -n ${DDTRACE_EXT_PKG_URL:-} ]]; then
+    error "The environment variable \$DDTRACE_EXT_PKG_URL has been renamed to \$DD_INSTALLER_URL and it needs to be a URL to the desired 'datadog-setup.php' to be found at https://github.com/DataDog/dd-trace-php/releases"
+fi
+
+if [[ -n ${DDTRACE_EXT_RELEASE:-} ]]; then
+    echo "The environment variable \$DDTRACE_EXT_RELEASE got renamed to \$DD_RELEASE, rewriting it for now, please update your environment variable." | indent
+    DD_RELEASE=$DDTRACE_EXT_RELEASE
+fi
+
+if [[ -n ${DDTRACE_EXT_PHP_API} ]]; then
+    echo "The environment variable \$DDTRACE_EXT_PHP_API is superfluous and will be ignored, feel free to remove it." | indent
+fi
+
 if [[ -n ${DD_INSTALLER_URL:-} ]]; then
     echo "Using package URL '$DD_INSTALLER_URL' (from "'$DD_INSTALLER_URL env var).' | indent
 else
