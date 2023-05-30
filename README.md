@@ -20,7 +20,7 @@ This buildpack accepts several config vars. All of them are optional:
 
 - `DDTRACE_EXT_PHP_API` - The PHP API version that your application uses. Defaults to `20210902`. Use `phpinfo()` to find the API version if you're not sure.
 - `DDTRACE_EXT_RELEASE` - The release name of [dd-trace-php](https://github.com/DataDog/dd-trace-php/releases/) to download. Defaults to `0.82.0`.
-- `DDTRACE_EXT_PKG_URL` - The URL to a dd-trace-php `.deb` file. This option overides `DDTRACE_EXT_RELEASE`.
+- `DDTRACE_EXT_PKG_URL` - The URL to a dd-trace-php `.tar.gz` file. This option overides `DDTRACE_EXT_RELEASE`.
 - `DD_PROFILING_ENABLED` - This will enable the profiling extension.
 
 ### More information: `DDTRACE_EXT_PHP_API`
