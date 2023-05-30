@@ -68,6 +68,10 @@ topic "Downloading package from $DDTRACE_EXT_PKG_URL"
 if [[ -f ${PACKAGE_FILE} ]];
 then
     echo "Found cached file at "$PACKAGE_FILE | indent
+    if ! gzip -t ${PACKAGE_FILE} 2>&1 | indent ; then
+        echo "cache is invalid, downloading ..." | indent
+        curl --silent --show-error --fail --location --output $PACKAGE_FILE $DDTRACE_EXT_PKG_URL 2>&1 | indent
+    fi
 else
     curl --silent --show-error --fail --location --output $PACKAGE_FILE $DDTRACE_EXT_PKG_URL 2>&1 | indent
 fi
