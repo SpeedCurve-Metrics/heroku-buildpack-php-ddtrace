@@ -14,6 +14,9 @@ To add this buildpack to your project, run the following:
 heroku buildpacks:add --app <your-app-name> https://github.com/SpeedCurve-Metrics/heroku-buildpack-php-ddtrace.git
 ```
 
+Make sure to add this buildpack after the PHP buildpack, as a PHP binary is
+needed to run the installer.
+
 ## Configuration
 
 This buildpack accepts several config vars. All of them are optional:

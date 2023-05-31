@@ -41,6 +41,10 @@ export_env_dir "$ENV_DIR" '^DD_'
 
 topic "Preparing to install Datadog PHP extensions"
 
+if ! which php >/dev/null; then
+    error "PHP is not installed. Please add a PHP buildpack to your app before adding this buildpack."
+fi
+
 # Warn folks about 
 if [[ -n ${DDTRACE_EXT_PKG_URL:-} ]]; then
     error "The environment variable \$DDTRACE_EXT_PKG_URL has been renamed to \$DD_INSTALLER_URL and it needs to be a URL to the desired 'datadog-setup.php' to be found at https://github.com/DataDog/dd-trace-php/releases"
