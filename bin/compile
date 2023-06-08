@@ -37,7 +37,7 @@ export_env_dir() {
     fi
 }
 
-export_env_dir "$ENV_DIR" '^DD_'
+export_env_dir "$ENV_DIR" '^DD_|DDTRACE_'
 
 topic "Preparing to install Datadog PHP extensions"
 
