@@ -37,48 +37,70 @@ export_env_dir() {
     fi
 }
 
-export_env_dir "$ENV_DIR" '^DDTRACE_EXT_'
+export_env_dir "$ENV_DIR" '^DD_|DDTRACE_'
 
-topic "Preparing to install ddtrace PHP extension"
+topic "Preparing to install Datadog PHP extensions"
 
+if ! which php >/dev/null; then
+    error "PHP is not installed. Please add a PHP buildpack to your app before adding this buildpack."
+fi
+
+# Warn folks about 
 if [[ -n ${DDTRACE_EXT_PKG_URL:-} ]]; then
-    echo "Using package URL '$DDTRACE_EXT_PKG_URL' (from "'$DDTRACE_EXT_PKG_URL env var).' | indent
+    error "The environment variable \$DDTRACE_EXT_PKG_URL has been renamed to \$DD_INSTALLER_URL and it needs to be a URL to the desired 'datadog-setup.php' to be found at https://github.com/DataDog/dd-trace-php/releases"
+fi
+
+if [[ -n ${DDTRACE_EXT_RELEASE:-} ]]; then
+    echo "The environment variable \$DDTRACE_EXT_RELEASE got renamed to \$DD_RELEASE, rewriting it for now, please update your environment variable." | indent
+    DD_RELEASE=$DDTRACE_EXT_RELEASE
+fi
+
+if [[ -n ${DDTRACE_EXT_PHP_API} ]]; then
+    echo "The environment variable \$DDTRACE_EXT_PHP_API is superfluous and will be ignored, feel free to remove it." | indent
+fi
+
+if [[ -n ${DD_INSTALLER_URL:-} ]]; then
+    echo "Using package URL '$DD_INSTALLER_URL' (from "'$DD_INSTALLER_URL env var).' | indent
 else
-    if [[ -n ${DDTRACE_EXT_RELEASE:-} ]]; then
-        echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (from "'$DDTRACE_EXT_RELEASE env var).' | indent
+    if [[ -n ${DD_RELEASE:-} ]]; then
+        echo "Using dd-trace-php release '$DD_RELEASE' (from "'$DD_RELEASE env var).' | indent
     else
-        export DDTRACE_EXT_RELEASE="0.82.0"
-        echo "Using dd-trace-php release '$DDTRACE_EXT_RELEASE' (default value)." | indent
+        export DD_RELEASE="0.87.2"
+        echo "Using dd-trace-php release '$DD_RELEASE' (default value)." | indent
     fi
-    export DDTRACE_EXT_PKG_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DDTRACE_EXT_RELEASE"/datadog-php-tracer_"$DDTRACE_EXT_RELEASE"_amd64.deb"
+    export DD_INSTALLER_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DD_RELEASE"/datadog-setup.php"
 fi
 
-APT_DIR="$BUILD_DIR/.apt"
-APT_CACHE_DIR="$CACHE_DIR/apt/cache"
-PACKAGE_NAME="dd-php-tracer"
-PACKAGE_FILE=$APT_CACHE_DIR/archives/$PACKAGE_NAME.deb
-
-mkdir -p $APT_CACHE_DIR/archives/partial
-mkdir -p $BUILD_DIR/.apt
-
-topic "Downloading package from $DDTRACE_EXT_PKG_URL"
-curl --silent --show-error --fail --location --output $PACKAGE_FILE $DDTRACE_EXT_PKG_URL 2>&1 | indent
-
-topic "Installing ddtrace PHP extension"
-dpkg -x $PACKAGE_FILE $BUILD_DIR/.apt/
-
-topic "Enabling ddtrace PHP extension"
-
-if [[ -n ${DDTRACE_EXT_PHP_API:-} ]]; then
-    echo "Using version '$DDTRACE_EXT_PHP_API' (from "'$DDTRACE_EXT_PHP_API env var).' | indent
-else
-    export DDTRACE_EXT_PHP_API="20210902"
-    echo "Using version '$DDTRACE_EXT_PHP_API' (default value)." | indent
+if [[ "$DD_INSTALLER_URL" != *datadog-setup.php ]]
+then
+    error "The package URL is out of date. Please use the 'datadog-setup.php' file URL from the releases at https://github.com/DataDog/dd-trace-php/releases"
 fi
 
-touch /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-echo "[PHP]" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-echo "extension=/app/.apt/opt/datadog-php/extensions/ddtrace-$DDTRACE_EXT_PHP_API.so" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
-echo "ddtrace.request_init_hook=/app/.apt/opt/datadog-php/dd-trace-sources/bridge/dd_wrap_autoloader.php" >> /app/.heroku/php/etc/php/conf.d/datadog-php-custom.ini
+topic "Downloading installer from $DD_INSTALLER_URL"
+curl --silent --show-error --fail --location --output datadog-setup.php $DD_INSTALLER_URL 2>&1 | indent
+
+topic "Running Datadog installer"
+
+OPTS=""
+
+if [[ -n ${DD_PROFILING_ENABLED:-} ]];
+then
+    OPTS+=" --enable-profiling"
+    echo "Profiling will be enabled" | indent
+fi
+
+if [[ -n ${DD_APPSEC_ENABLED:-} ]];
+then
+    OPTS+=" --enable-appsec"
+    echo "Appsec will be enabled" | indent
+fi
+
+mkdir -p $BUILD_DIR/opt
+
+env -u PHP_INI_SCAN_DIR php datadog-setup.php --php-bin=all --install-dir=$BUILD_DIR/opt $OPTS 2>&1 | indent
+
+topic "Validating installation"
+
+env -u PHP_INI_SCAN_DIR php -v 2>&1 | indent
 
 echo "Done" | indent
