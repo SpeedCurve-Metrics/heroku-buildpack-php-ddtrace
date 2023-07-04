@@ -21,7 +21,9 @@ needed to run the installer.
 
 This buildpack accepts several config vars. All of them are optional:
 
-- `DD_RELEASE` - The release name of [dd-trace-php](https://github.com/DataDog/dd-trace-php/releases/) to download. Defaults to `0.87.2`.
+- `DD_RELEASE` - The release version of [dd-trace-php](https://github.com/DataDog/dd-trace-php/releases/) to download. Uses latest release if omited.
 - `DD_INSTALLER_URL` - The URL to the `datadog-setup.php` to be used (to be found on the [dd-trace-php release page](https://github.com/DataDog/dd-trace-php/releases/)).
 - `DD_PROFILING_ENABLED` - Set to a non empty value, this will install and enable the profiling extension.
 - `DD_APPSEC_ENABLED` - Set to a non empty value, this will install and enable the appsec extension.
+
+**Note:** In case `DD_RELEASE` is omited, this will always install the latest version.
