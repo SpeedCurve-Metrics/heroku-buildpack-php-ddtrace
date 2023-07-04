@@ -64,11 +64,11 @@ if [[ -n ${DD_INSTALLER_URL:-} ]]; then
 else
     if [[ -n ${DD_RELEASE:-} ]]; then
         echo "Using dd-trace-php release '$DD_RELEASE' (from "'$DD_RELEASE env var).' | indent
+        export DD_INSTALLER_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DD_RELEASE"/datadog-setup.php"
     else
-        export DD_RELEASE="0.87.2"
-        echo "Using dd-trace-php release '$DD_RELEASE' (default value)." | indent
+        echo "Using 'latest' dd-trace-php release (default)." | indent
+        export DD_INSTALLER_URL="https://github.com/DataDog/dd-trace-php/releases/latest/download/datadog-setup.php"
     fi
-    export DD_INSTALLER_URL="https://github.com/DataDog/dd-trace-php/releases/download/"$DD_RELEASE"/datadog-setup.php"
 fi
 
 if [[ "$DD_INSTALLER_URL" != *datadog-setup.php ]]
